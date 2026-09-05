@@ -5,21 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>🍷 Wine Lens</title>
 <style>
-/* ── Reset & base ── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:#f8f6f2;color:#2d2d2d;min-height:100dvh;display:flex;flex-direction:column;align-items:center}
-/* ── Container ── */
 .container{max-width:480px;width:100%;padding:16px;padding-bottom:80px}
-/* ── Header ── */
 .header{display:flex;align-items:center;gap:10px;padding:16px 0 8px}
 .header h1{font-size:22px;font-weight:700;letter-spacing:-0.3px}
-.header .sub{font-size:12px;color:#888;margin-top:1px}
-/* ── Tabs ── */
 .tabs{display:flex;gap:8px;margin:12px 0 16px;border-bottom:2px solid #e8e4de;padding-bottom:10px}
 .tab{flex:1;padding:10px;text-align:center;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;background:#e8e4de;color:#666;border:none;transition:all .2s}
 .tab.active{background:#722f37;color:#fff}
-.tab.hidden{display:none}
-/* ── Scan area ── */
 .camera-area{position:relative;background:#000;border-radius:12px;overflow:hidden;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;margin-bottom:12px}
 .camera-area video{width:100%;height:100%;object-fit:cover}
 .camera-area img{width:100%;height:100%;object-fit:contain;background:#1a1a1a}
@@ -30,23 +23,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 .btn-retake{background:rgba(255,255,255,.9);color:#2d2d2d}
 .btn-done{background:#722f37;color:#fff}
 .btn-done:disabled{opacity:.5;cursor:not-allowed}
-/* ── Search tab ── */
 .search-box{display:flex;gap:8px;margin-bottom:12px}
 .search-box input{flex:1;padding:12px 14px;border:2px solid #ddd;border-radius:10px;font-size:16px;background:#fff;outline:none}
 .search-box input:focus{border-color:#722f37}
 .search-box button{padding:12px 18px;background:#722f37;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap}
 .search-box button:disabled{opacity:.5}
-/* ── Status ── */
 .status{text-align:center;padding:12px;font-size:14px;color:#888;min-height:44px}
 .status .spinner{display:inline-block;width:16px;height:16px;border:2px solid #ddd;border-top-color:#722f37;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:8px}
 @keyframes spin{to{transform:rotate(360deg)}}
-/* ── Result card ── */
 .result-card{background:#fff;border-radius:16px;box-shadow:0 2px 20px rgba(0,0,0,.08);overflow:hidden;display:none;margin-top:4px}
 .result-card.show{display:block}
-.card-header{background:#722f37;color:#fff;padding:20px 18px;position:relative}
+.card-header{background:#722f37;color:#fff;padding:18px;position:relative}
 .card-header h2{font-size:20px;font-weight:700;line-height:1.3;margin-bottom:4px}
 .card-header .winery-name{font-size:14px;opacity:.85}
-.card-badge{position:absolute;top:16px;right:16px;background:rgba(255,255,255,.2);border-radius:20px;padding:6px 14px;font-size:13px;font-weight:600}
+.card-badge{position:absolute;top:14px;right:14px;background:rgba(255,255,255,.2);border-radius:20px;padding:5px 12px;font-size:12px;font-weight:600}
 .card-body{padding:18px}
 .rating-row{display:flex;align-items:center;gap:12px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid #f0eee8}
 .rating-score{font-size:36px;font-weight:800;color:#2d2d2d;line-height:1}
@@ -56,56 +46,36 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 .price-box{flex:1;background:#f8f6f2;border-radius:10px;padding:12px;text-align:center}
 .price-box .label{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
 .price-box .value{font-size:20px;font-weight:700;color:#2d2d2d}
+.critic-scores{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.critic-score{flex:1;min-width:70px;background:#f8f6f2;border-radius:8px;padding:8px;text-align:center}
+.critic-score .label{font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.4px}
+.critic-score .value{font-size:16px;font-weight:700;color:#2d2d2d}
+.critic-score .source{font-size:10px;color:#999}
 .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
 .detail-item{background:#f8f6f2;border-radius:8px;padding:10px 12px}
 .detail-item .label{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px}
 .detail-item .value{font-size:15px;font-weight:600;color:#2d2d2d}
-.wine-image{width:100%;max-height:200px;object-fit:contain;background:#f0eee8;border-radius:8px;margin-bottom:14px}
-.food-pairing{background:#fdf6ec;border-left:3px solid #d4a574;padding:10px 12px;border-radius:0 8px 8px 0;font-size:13px;color:#666;margin-bottom:14px}
-.desc{font-size:13px;color:#555;line-height:1.5;margin-bottom:14px}
+.desc{font-size:13px;color:#555;line-height:1.5;margin-bottom:14px;padding:10px 12px;background:#f8f6f2;border-radius:8px}
 .no-results{text-align:center;padding:40px 20px;color:#999;font-size:15px;display:none}
-/* ── API settings ── */
-.settings-bar{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap}
-.settings-bar button{font-size:12px;padding:6px 12px;border:1px solid #ddd;border-radius:6px;background:#fff;color:#666;cursor:pointer}
-.settings-bar button:hover{background:#f0eee8}
-/* ── Modal ── */
-.modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.4);z-index:100;align-items:center;justify-content:center}
-.modal-overlay.show{display:flex}
-.modal{background:#fff;border-radius:16px;padding:24px;width:90%;max-width:400px;max-height:90vh;overflow-y:auto}
-.modal h3{font-size:18px;margin-bottom:16px}
-.modal label{display:block;font-size:13px;font-weight:600;color:#555;margin-bottom:4px;margin-top:12px}
-.modal input{width:100%;padding:10px 12px;border:2px solid #ddd;border-radius:8px;font-size:14px;outline:none}
-.modal input:focus{border-color:#722f37}
-.modal .hint{font-size:11px;color:#999;margin-top:4px}
-.modal-actions{display:flex;gap:8px;margin-top:18px}
-.modal-actions button{flex:1;padding:10px;border-radius:8px;border:none;font-size:14px;font-weight:600;cursor:pointer}
-.modal-actions .save{background:#722f37;color:#fff}
-.modal-actions .cancel{background:#e8e4de;color:#666}
-/* ── Footer ── */
+.api-notice{background:#fdf6ec;border:1px solid #f0e4d0;border-radius:8px;padding:12px;font-size:13px;color:#866;margin-bottom:12px;line-height:1.5}
 .footer{text-align:center;padding:20px 0 10px;font-size:11px;color:#bbb}
 </style>
 </head>
 <body>
-<div class="container" id="app">
-  <!-- Header -->
+<div class="container">
   <div class="header">
-    <div><h1>🍷 Wine Lens</h1><div class="sub">Scan or search → ratings + price</div></div>
+    <div><h1>🍷 Wine Lens</h1></div>
   </div>
 
-  <!-- Settings cog -->
-  <div class="settings-bar">
-    <button onclick="showSettings()">⚙️ API Keys</button>
-  </div>
+  <div class="api-notice" id="apiNotice">🔑 <strong>Gemini API key needed</strong> (free, 60 req/min). Get at <a href="https://aistudio.google.com/apikey" target="_blank" style="color:#722f37">aistudio.google.com/apikey</a></div>
 
-  <!-- Tabs -->
   <div class="tabs">
-    <button class="tab active" data-tab="scan" onclick="switchTab('scan')">📸 Scan Label</button>
-    <button class="tab" data-tab="search" onclick="switchTab('search')">🔍 Search</button>
+    <button class="tab active" onclick="switchTab('scan')">📸 Scan Label</button>
+    <button class="tab" onclick="switchTab('search')">🔍 Search</button>
   </div>
 
-  <!-- Scan tab -->
   <div id="tab-scan">
-    <div class="camera-area" id="cameraArea">
+    <div class="camera-area" id="cameraArea" onclick="if(!stream)initCamera()">
       <video id="video" autoplay playsinline></video>
       <canvas id="canvas" style="display:none"></canvas>
       <img id="preview" style="display:none">
@@ -121,7 +91,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
     </div>
   </div>
 
-  <!-- Search tab -->
   <div id="tab-search" style="display:none">
     <div class="search-box">
       <input id="searchInput" type="text" placeholder="e.g. Penfolds Grange 2018" autocomplete="off">
@@ -129,19 +98,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
     </div>
   </div>
 
-  <!-- Status -->
   <div class="status" id="status">Ready</div>
 
-  <!-- Result -->
   <div class="result-card" id="resultCard">
-    <div class="card-header" id="cardHeader">
+    <div class="card-header">
       <h2 id="wineName"></h2>
       <div class="winery-name" id="wineryName"></div>
       <div class="card-badge" id="wineType"></div>
     </div>
     <div class="card-body">
-      <img class="wine-image" id="wineImage" style="display:none">
-      <div class="rating-row" id="ratingRow">
+      <div class="rating-row">
         <div><div class="rating-score" id="ratingScore"></div></div>
         <div>
           <div class="rating-stars" id="ratingStars"></div>
@@ -149,44 +115,27 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
         </div>
       </div>
       <div class="price-row" id="priceRow">
-        <div class="price-box"><div class="label">💰 Avg Price</div><div class="value" id="avgPrice">—</div></div>
-        <div class="price-box"><div class="label">🏆 Vivino Rating</div><div class="value" id="vivRating">—</div></div>
+        <div class="price-box"><div class="label">💰 Price</div><div class="value" id="winePrice">—</div></div>
+        <div class="price-box"><div class="label">🏆 Rating</div><div class="value" id="vivRating">—</div></div>
+      </div>
+      <div class="critic-scores" id="criticScores">
+        <div class="critic-score"><div class="label">Wine Spectator</div><div class="value" id="wsScore">—</div><div class="source" id="wsSource"></div></div>
+        <div class="critic-score"><div class="label">Robert Parker</div><div class="value" id="rpScore">—</div></div>
+        <div class="critic-score"><div class="label">James Suckling</div><div class="value" id="jsScore">—</div></div>
       </div>
       <div class="detail-grid">
         <div class="detail-item"><div class="label">🍇 Grape</div><div class="value" id="grapeVal">—</div></div>
         <div class="detail-item"><div class="label">📅 Vintage</div><div class="value" id="vintageVal">—</div></div>
         <div class="detail-item"><div class="label">🌍 Region</div><div class="value" id="regionVal">—</div></div>
-        <div class="detail-item"><div class="label">🥂 Type</div><div class="value" id="typeVal">—</div></div>
+        <div class="detail-item"><div class="label">🍷 Alc.</div><div class="value" id="alcoholVal">—</div></div>
       </div>
-      <div class="food-pairing" id="foodPairing" style="display:none"></div>
       <div class="desc" id="wineDesc" style="display:none"></div>
+      <div style="font-size:11px;color:#bbb;text-align:center;padding-top:8px">Data via Vivino</div>
     </div>
   </div>
 
-  <div class="no-results" id="noResults">No wine found. Try a different search.</div>
-
-  <!-- Settings modal -->
-  <div class="modal-overlay" id="settingsModal">
-    <div class="modal">
-      <h3>⚙️ API Keys</h3>
-      <p style="font-size:13px;color:#666;margin-bottom:8px">Both are <strong>free</strong> to sign up.</p>
-
-      <label>🔮 Gemini API Key (for reading labels)</label>
-      <input id="geminiKey" type="text" placeholder="AIzaSy...">
-      <div class="hint">Get free at <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a> — 60 req/min free</div>
-
-      <label>🍷 Parse.bot API Key (Vivino lookup)</label>
-      <input id="parseKey" type="text" placeholder="pst_...">
-      <div class="hint">Get free at <a href="https://parse.bot/signup" target="_blank">parse.bot/signup</a> — 200 credits/mo free</div>
-
-      <div class="modal-actions">
-        <button class="cancel" onclick="closeSettings()">Cancel</button>
-        <button class="save" onclick="saveSettings()">Save</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="footer">🍷 Wine Lens · Data via Parse.bot (Vivino)</div>
+  <div class="no-results" id="noResults">No wine found. Try a different name.</div>
+  <div class="footer">🍷 Wine Lens · Gemini AI + Vivino</div>
 </div>
 
 <script>
@@ -195,37 +144,16 @@ let stream = null;
 let capturedBlob = null;
 let currentTab = 'scan';
 
-// ── Settings ──
-function loadSettings() {
-  return {
-    geminiKey: localStorage.getItem('wine_gemini_key') || '',
-    parseKey: localStorage.getItem('wine_parse_key') || '',
-  };
-}
-function showSettings() {
-  const s = loadSettings();
-  document.getElementById('geminiKey').value = s.geminiKey;
-  document.getElementById('parseKey').value = s.parseKey;
-  document.getElementById('settingsModal').classList.add('show');
-}
-function closeSettings() {
-  document.getElementById('settingsModal').classList.remove('show');
-}
-function saveSettings() {
-  localStorage.setItem('wine_gemini_key', document.getElementById('geminiKey').value.trim());
-  localStorage.setItem('wine_parse_key', document.getElementById('parseKey').value.trim());
-  closeSettings();
-  setStatus('✅ Keys saved');
-}
-
 // ── Tab switching ──
 function switchTab(tab) {
   currentTab = tab;
-  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', [...t.classList].includes(tab === 'scan' ? 'tab' : 'tab')));
+  // Simpler approach
+  document.querySelectorAll('.tab')[0].classList.toggle('active', tab === 'scan');
+  document.querySelectorAll('.tab')[1].classList.toggle('active', tab === 'search');
   document.getElementById('tab-scan').style.display = tab === 'scan' ? 'block' : 'none';
   document.getElementById('tab-search').style.display = tab === 'search' ? 'block' : 'none';
-  document.getElementById('resultCard').classList.remove('show');
-  document.getElementById('noResults').style.display = 'none';
+  hideResult();
   if (tab === 'scan') initCamera();
   else stopCamera();
 }
@@ -246,15 +174,12 @@ async function initCamera() {
     document.getElementById('overlayBtns').style.display = 'flex';
     capturedBlob = null;
   } catch(e) {
-    document.getElementById('placeholder').innerHTML = '<div style="font-size:32px;margin-bottom:8px">📷</div><div>Camera not available<br><small style="color:#999">' + e.message + '</small></div>';
+    document.getElementById('placeholder').innerHTML = '<div style="font-size:32px;margin-bottom:8px">📷</div><div>Camera not available<br><small style="color:#999">' + e.message + '</small><br><button onclick="switchTab(\'search\')" style="margin-top:8px;padding:8px 16px;border:1px solid #722f37;border-radius:8px;background:white;color:#722f37;cursor:pointer">Try Search instead</button></div>';
   }
 }
 
 function stopCamera() {
-  if (stream) {
-    stream.getTracks().forEach(t => t.stop());
-    stream = null;
-  }
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
 }
 
 function capturePhoto() {
@@ -264,20 +189,6 @@ function capturePhoto() {
   canvas.height = video.videoHeight;
   canvas.getContext('2d').drawImage(video, 0, 0);
   
-  // Compress like grocery-ledger (max 1600)
-  const maxDim = 1600;
-  let w = canvas.width, h = canvas.height;
-  if (w > maxDim || h > maxDim) {
-    const ratio = Math.min(maxDim / w, maxDim / h);
-    const c2 = document.createElement('canvas');
-    c2.width = Math.round(w * ratio);
-    c2.height = Math.round(h * ratio);
-    c2.getContext('2d').drawImage(canvas, 0, 0, c2.width, c2.height);
-    capturedBlob = new Promise(resolve => c2.toBlob(b => resolve(b), 'image/jpeg', 0.85));
-  } else {
-    capturedBlob = new Promise(resolve => canvas.toBlob(b => resolve(b), 'image/jpeg', 0.85));
-  }
-  
   document.getElementById('preview').src = canvas.toDataURL('image/jpeg', 0.85);
   document.getElementById('preview').style.display = 'block';
   document.getElementById('video').style.display = 'none';
@@ -285,7 +196,8 @@ function capturePhoto() {
   document.getElementById('btnRetake').style.display = 'inline-block';
   document.getElementById('btnDone').style.display = 'inline-block';
   document.getElementById('btnDone').disabled = false;
-  setStatus('📸 Photo captured. Tap "Analyze"');
+  setStatus('📸 Tap "Analyze"');
+  capturedBlob = canvas.toDataURL('image/jpeg', 0.85);
 }
 
 function retakePhoto() {
@@ -295,50 +207,53 @@ function retakePhoto() {
   document.getElementById('btnCapture').style.display = 'inline-block';
   document.getElementById('btnRetake').style.display = 'none';
   document.getElementById('btnDone').style.display = 'none';
-  document.getElementById('resultCard').classList.remove('show');
+  hideResult();
   setStatus('Ready');
 }
 
-// ── Set status ──
 function setStatus(msg) {
   document.getElementById('status').innerHTML = msg;
 }
 
-// ── Analyze wine label via Gemini Vision ──
-async function analyzeWine() {
-  const s = loadSettings();
-  if (!s.geminiKey) {
-    showSettings();
-    setStatus('⚠️ Please enter your free Gemini API key first');
-    return;
-  }
-
-  setStatus('<span class="spinner"></span>Reading label…');
+function hideResult() {
   document.getElementById('resultCard').classList.remove('show');
   document.getElementById('noResults').style.display = 'none';
+}
+
+// ── Analyze via Gemini vision ──
+async function analyzeWine() {
+  const geminiKey = localStorage.getItem('wine_gemini_key');
+  if (!geminiKey) {
+    const key = prompt('📝 Enter your free Gemini API key (get at aistudio.google.com/apikey — 60 req/min free):');
+    if (!key) { setStatus('⚠️ API key needed'); document.getElementById('btnDone').disabled = false; return; }
+    localStorage.setItem('wine_gemini_key', key);
+  }
+
+  setStatus('<span class="spinner"></span>Reading label with AI…');
+  hideResult();
   document.getElementById('btnDone').disabled = true;
 
   try {
-    const blob = await capturedBlob;
-    const base64 = await blobToBase64(blob);
-    const mimeType = blob.type;
-
-    const resp = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + s.geminiKey, {
+    const base64 = capturedBlob.split(',')[1] || capturedBlob;
+    
+    const resp = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + localStorage.getItem('wine_gemini_key'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{
           parts: [
-            { text: 'You are a wine expert. Look at this wine label photo and extract EXACTLY these fields in JSON format (no markdown, no code fences, just raw JSON): { "wine_name": "...", "winery": "...", "vintage": 2020 or null, "grape": "...", "region": "...", "type": "Red/White/Rosé/Sparkling/Dessert" }. If you cannot read the label clearly, return {"error": "Could not read label"}. Be concise — extract only what\'s visible on the label.' },
-            { inline_data: { mime_type: mimeType, data: base64.split(',')[1] || base64 } }
+            { text: 'You are a wine expert. Look at this wine label photo and extract EXACTLY these fields in JSON format (no markdown code fences, just raw JSON): { "wine_name": "...", "winery": "...", "vintage": 2020 or null, "grape": "...", "region": "...", "type": "Red/White/Rosé/Sparkling/Dessert" }. If you cannot read the label clearly, return {"error": "Could not read label"}' },
+            { inline_data: { mime_type: 'image/jpeg', data: base64 } }
           ]
         }]
       })
     });
 
+    if (!resp.ok) {
+      const err = await resp.json();
+      throw new Error('Gemini: ' + (err.error?.message || resp.status));
+    }
     const result = await resp.json();
-    if (!resp.ok) throw new Error(result.error?.message || 'Gemini API error: ' + resp.status);
-
     const text = result.candidates?.[0]?.content?.parts?.[0]?.text || '';
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error('Could not parse AI response');
@@ -346,39 +261,25 @@ async function analyzeWine() {
     const labelData = JSON.parse(jsonMatch[0]);
     if (labelData.error) throw new Error(labelData.error);
 
-    // Build search query
     const query = [labelData.wine_name, labelData.winery, labelData.vintage].filter(Boolean).join(' ');
-    setStatus('<span class="spinner"></span>Found: ' + query + ' — looking up ratings…');
+    setStatus('<span class="spinner"></span>Found: "' + query + '" — looking up on Vivino…');
 
-    // Look up on Vivino
-    await lookupWineOnVivino(query, labelData);
+    await lookupVivino(query);
   } catch(e) {
-    setStatus('❌ ' + e.message);
+    setStatus('❌ ' + e.message + ' — try Search tab');
     document.getElementById('btnDone').disabled = false;
   }
-}
-
-function blobToBase64(blob) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
 }
 
 // ── Search by text ──
 async function searchWine() {
   const query = document.getElementById('searchInput').value.trim();
   if (!query) return;
-  
-  document.getElementById('resultCard').classList.remove('show');
-  document.getElementById('noResults').style.display = 'none';
-  setStatus('<span class="spinner"></span>Searching…');
+  hideResult();
+  setStatus('<span class="spinner"></span>Searching Vivino…');
   document.getElementById('searchBtn').disabled = true;
-
   try {
-    await lookupWineOnVivino(query, null);
+    await lookupVivino(query);
   } catch(e) {
     setStatus('❌ ' + e.message);
   } finally {
@@ -386,133 +287,76 @@ async function searchWine() {
   }
 }
 
-// ── Vivino lookup via Parse.bot ──
-async function lookupWineOnVivino(query, labelData) {
-  const s = loadSettings();
-  if (!s.parseKey) {
-    showSettings();
-    setStatus('⚠️ Please enter your free Parse.bot API key first');
+// ── Lookup on Vivino via proxy ──
+async function lookupVivino(query) {
+  // Search Vivino via Cloudflare Function
+  const searchUrl = '/apis/search-vivino?q=' + encodeURIComponent(query);
+  const resp = await fetch(searchUrl);
+  if (!resp.ok) {
+    // Fallback: use our backend to search
+    throw new Error('Search failed: ' + resp.status);
+  }
+  const data = await resp.json();
+  
+  if (!data || !data.url) {
+    document.getElementById('noResults').style.display = 'block';
+    setStatus('No results found for "' + query + '"');
     return;
   }
 
-  try {
-    // Step 1: search wines
-    const searchResp = await fetch('https://api.parse.bot/scraper/0573a298-2c9e-48ad-98ad-08cd6f65e3e4/search_wines_with_prices?query=' + encodeURIComponent(query) + '&page=0&limit=5&country_code=HK', {
-      headers: { 'X-API-Key': s.parseKey }
-    });
+  setStatus('<span class="spinner"></span>Getting wine details…');
 
-    if (!searchResp.ok) {
-      const errTxt = await searchResp.text();
-      throw new Error('Vivino search: ' + searchResp.status + ' ' + errTxt.slice(0, 100));
-    }
+  // Get wine details
+  const detailResp = await fetch('/apis/get-vivino-wine?url=' + encodeURIComponent(data.url));
+  if (!detailResp.ok) throw new Error('Failed to get wine details');
+  const details = await detailResp.json();
 
-    const searchData = await searchResp.json();
-    const hits = searchData?.data?.hits || [];
-    
-    if (hits.length === 0) {
-      document.getElementById('noResults').style.display = 'block';
-      setStatus('No matches found for "' + query + '"');
-      return;
-    }
-
-    const wine = hits[0]; // Best match
-
-    // Step 2: get detailed wine info
-    const detailResp = await fetch('https://api.parse.bot/scraper/0573a298-2c9e-48ad-98ad-08cd6f65e3e4/get_wine_details?wine_slug=' + encodeURIComponent(wine.seo_name), {
-      headers: { 'X-API-Key': s.parseKey }
-    });
-
-    let detailData = null;
-    if (detailResp.ok) {
-      detailData = await detailResp.json();
-    }
-
-    // Step 3: render
-    renderWineCard(wine, detailData, labelData, query);
-  } catch(e) {
-    setStatus('❌ ' + e.message);
-  }
+  // Render
+  renderWineCard(details, query);
+  setStatus('✅ ' + (details.name || query));
 }
 
-// ── Render wine card ──
-function renderWineCard(wine, detailData, labelData, query) {
-  const stats = wine.statistics || {};
-  const rating = stats.ratings_average || 0;
-  const reviews = stats.ratings_count || 0;
-  const price = wine.price || null;
-  const vintage = wine.vintage_year || (labelData?.vintage) || '';
-  const bottles = wine.bottle_image_url || null;
-  const regionName = wine.region?.name || labelData?.region || '';
-  const countryCode = wine.region?.country || '';
-  const countryName = countryCode ? { ar:'Argentina', au:'Australia', cl:'Chile', fr:'France', it:'Italy', es:'Spain', us:'USA', pt:'Portugal', nz:'New Zealand', za:'South Africa', de:'Germany' }[countryCode] || countryCode.toUpperCase() : '';
-  const regionFull = [regionName, countryName].filter(Boolean).join(', ');
+// ── Render ──
+function renderWineCard(d, query) {
+  const rating = d.rating || 0;
+  const reviews = d.reviews || 0;
+  const price = d.price || null;
 
-  // Header
-  document.getElementById('wineName').textContent = wine.name || query;
-  document.getElementById('wineryName').textContent = labelData?.winery || wine.winery?.name || '';
-  
-  const typeNames = { 1:'Red', 2:'White', 3:'Rosé', 4:'Sparkling', 5:'Dessert', 7:'Fortified' };
-  const typeName = typeNames[wine.wine_type] || labelData?.type || 'Wine';
-  document.getElementById('wineType').textContent = typeName;
+  document.getElementById('wineName').textContent = d.name || query;
+  document.getElementById('wineryName').textContent = d.winery || '';
+  document.getElementById('wineType').textContent = d.type || 'Wine';
 
-  // Rating
-  if (rating) {
-    document.getElementById('ratingScore').textContent = rating.toFixed(1);
-    document.getElementById('ratingStars').textContent = getStars(rating);
-    document.getElementById('ratingCount').textContent = reviews.toLocaleString() + ' ratings';
-  } else {
-    document.getElementById('ratingScore').textContent = '—';
-    document.getElementById('ratingStars').textContent = '☆☆☆☆☆';
-    document.getElementById('ratingCount').textContent = 'No ratings';
-  }
+  document.getElementById('ratingScore').textContent = rating ? rating.toFixed(1) : '—';
+  document.getElementById('ratingStars').textContent = getStars(rating);
+  document.getElementById('ratingCount').textContent = reviews ? reviews.toLocaleString() + ' ratings' : 'No ratings';
   document.getElementById('vivRating').textContent = rating ? rating.toFixed(1) + ' ⭐' : '—';
-  
-  // Price
-  document.getElementById('avgPrice').textContent = price ? '$' + price.toFixed(2) : '—';
+  document.getElementById('winePrice').textContent = price ? '$' + price : '—';
 
-  // Details
-  document.getElementById('grapeVal').textContent = labelData?.grape || wine.grapes || '—';
-  document.getElementById('vintageVal').textContent = vintage || 'NV';
-  document.getElementById('regionVal').textContent = regionFull || '—';
-  document.getElementById('typeVal').textContent = typeName;
+  // Critic scores
+  document.getElementById('wsScore').textContent = d.ws || '—';
+  document.getElementById('rpScore').textContent = d.rp || '—';
+  document.getElementById('jsScore').textContent = d.js || '—';
+  if (d.ws_source) document.getElementById('wsSource').textContent = d.ws_source;
 
-  // Image
-  const imgEl = document.getElementById('wineImage');
-  if (bottles) {
-    imgEl.src = bottles;
-    imgEl.style.display = 'block';
-  } else {
-    imgEl.style.display = 'none';
-  }
+  document.getElementById('grapeVal').textContent = d.grapes || '—';
+  document.getElementById('vintageVal').textContent = d.vintage || 'NV';
+  document.getElementById('regionVal').textContent = d.region || '—';
+  document.getElementById('alcoholVal').textContent = d.alcohol || '—';
 
-  // Description
   const descEl = document.getElementById('wineDesc');
-  if (detailData?.data?.description) {
-    descEl.textContent = detailData.data.description;
+  if (d.description) {
+    descEl.textContent = d.description;
     descEl.style.display = 'block';
   } else {
     descEl.style.display = 'none';
   }
 
-  // Food pairing (we store it separately)
-  const foodEl = document.getElementById('foodPairing');
-  if (detailData?.data?.food_pairings && detailData.data.food_pairings.length > 0) {
-    const foods = detailData.data.food_pairings.map(f => f.name || f).join(' · ');
-    foodEl.innerHTML = '🍽️ Pairs well with: <strong>' + foods + '</strong>';
-    foodEl.style.display = 'block';
-  } else {
-    foodEl.style.display = 'none';
-  }
-
-  // Show card
   document.getElementById('resultCard').classList.add('show');
   document.getElementById('noResults').style.display = 'none';
   document.getElementById('btnDone').disabled = false;
-  setStatus('✅ Found ' + (wine.name || query));
 }
 
 function getStars(rating) {
-  const full = Math.round(rating) / 1;
   let s = '';
   for (let i = 0; i < 5; i++) {
     if (rating >= i + 0.75) s += '★';
@@ -525,7 +369,6 @@ function getStars(rating) {
 // ── Init ──
 document.addEventListener('DOMContentLoaded', () => {
   initCamera();
-  // Enter key in search
   document.getElementById('searchInput').addEventListener('keydown', e => {
     if (e.key === 'Enter') searchWine();
   });
