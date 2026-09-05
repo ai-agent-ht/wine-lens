@@ -189,7 +189,7 @@ async function analyzeWine(){
     const d=await r.json();
     if(!r.ok) throw new Error(d.error||'API error '+r.status);
     if(d.warning){ setStatus('⚠️ '+d.warning); document.getElementById('btnDone').disabled=false; return; }
-    showResult(d);
+    renderWineCard(d, d.searchQuery||'');
   }catch(e){setStatus('❌ '+e.message+' — try Search tab');document.getElementById('btnDone').disabled=false;}
 }
 async function searchWine(){
