@@ -7,7 +7,6 @@ const HTML = `<!DOCTYPE html>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>🍷 Wine Lens</title>
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:#f8f6f2;color:#2d2d2d;min-height:100dvh;display:flex;flex-direction:column;align-items:center}
@@ -70,7 +69,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
   <div class="header">
     <div><h1>🍷 Wine Lens</h1></div>
   </div>
-  <div class="api-notice" id="apiNotice">📸 <strong>Scan label</strong> — Tesseract.js OCR works in your browser. Search tab also available.</div>
+  <div class="api-notice" id="apiNotice">🤖 <strong>Scan label</strong> — Qwen VL reads the label via OpenRouter. No API key to manage.</div>
   <div class="tabs">
     <button class="tab active" onclick="switchTab('scan')">📸 Scan Label</button>
     <button class="tab" onclick="switchTab('search')">🔍 Search</button>
@@ -129,7 +128,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
     </div>
   </div>
   <div class="no-results" id="noResults">No wine found. Try a different name.</div>
-  <div class="footer">🍷 Wine Lens · Tesseract OCR + Vivino</div>
+  <div class="footer">🍷 Wine Lens · Qwen VL + Vivino</div>
 </div>
 <script>
 let stream=null,capturedBlob=null,currentTab='scan';
@@ -179,18 +178,18 @@ function retakePhoto(){capturedBlob=null;document.getElementById('preview').styl
 function setStatus(m){document.getElementById('status').innerHTML=m;}
 function hideResult(){document.getElementById('resultCard').classList.remove('show');document.getElementById('noResults').style.display='none';}
 async function analyzeWine(){
-  setStatus('<span class="spinner"></span>Running OCR on label…');
+  setStatus('<span class="spinner"></span>Sending label to Qwen VL…');
   hideResult();document.getElementById('btnDone').disabled=true;
   try{
-    // Run Tesseract.js in browser - no API key needed
-    const result = await Tesseract.recognize(capturedBlob, 'eng', {
-      logger: m => { if(m.status==='recognizing text') setStatus('📖 Reading text... '+Math.round(m.progress*100)+'%'); }
+    const r=await fetch('/api/analyze-label',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({image:capturedBlob})
     });
-    const text = result.data.text;
-    if(!text || text.trim().length < 5) throw new Error('Could not read label text');
-    setStatus('📖 Extracted: "'+text.trim().substring(0,60)+'…"');
-    // Use extracted text to search Vivino
-    await lookupVivino(text.trim().substring(0,100));
+    const d=await r.json();
+    if(!r.ok) throw new Error(d.error||'API error '+r.status);
+    if(d.warning){ setStatus('⚠️ '+d.warning); document.getElementById('btnDone').disabled=false; return; }
+    showResult(d);
   }catch(e){setStatus('❌ '+e.message+' — try Search tab');document.getElementById('btnDone').disabled=false;}
 }
 async function searchWine(){
@@ -360,6 +359,66 @@ export default {
       if (!wineUrl) return new Response(JSON.stringify({ error: 'Missing url' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
       try {
         const details = await getWineDetails(wineUrl);
+        return new Response(JSON.stringify(details), { headers: { 'Content-Type': 'application/json' } });
+      } catch (e) {
+        return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+      }
+    }
+
+    // API: Analyze label with Qwen VL
+    if (path === '/api/analyze-label' && request.method === 'POST') {
+      try {
+        const body = await request.json();
+        const imageBase64 = body.image;
+        if (!imageBase64) return new Response(JSON.stringify({ error: 'Missing image' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+
+        // Call Qwen2.5-VL-72B-Instruct via OpenRouter
+        const orKey = env.OPENROUTER_KEY;
+        if (!orKey) return new Response(JSON.stringify({ error: 'Server not configured (missing OPENROUTER_KEY)' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+
+        const imageUrl = imageBase64.startsWith('data:') ? imageBase64 : 'data:image/jpeg;base64,' + imageBase64;
+
+        const aiResp = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': 'Bearer ' + orKey,
+            'Content-Type': 'application/json',
+            'HTTP-Referer': 'https://wine-lens.lg-frankieht.workers.dev',
+            'X-Title': 'Wine Lens'
+          },
+          body: JSON.stringify({
+            model: 'qwen/qwen2.5-vl-72b-instruct',
+            messages: [{
+              role: 'user',
+              content: [
+                { type: 'text', text: 'Extract the wine name from this label. Return ONLY the wine name and vintage if visible, nothing else. Example: "Penfolds Grange 2018" or "Cloudy Bay Sauvignon Blanc". If you cannot read a label, return "UNREADABLE".' },
+                { type: 'image_url', image_url: { url: imageUrl } }
+              ]
+            }],
+            max_tokens: 50
+          })
+        });
+
+        if (!aiResp.ok) {
+          const err = await aiResp.text();
+          return new Response(JSON.stringify({ error: 'Qwen VL error: ' + aiResp.status, detail: err }), { status: 502, headers: { 'Content-Type': 'application/json' } });
+        }
+
+        const aiData = await aiResp.json();
+        const wineName = aiData.choices?.[0]?.message?.content?.trim() || '';
+        if (!wineName || wineName === 'UNREADABLE') {
+          return new Response(JSON.stringify({ error: 'Could not read label' }), { status: 422, headers: { 'Content-Type': 'application/json' } });
+        }
+
+        // Search Vivino
+        const vivinoUrl = await searchWineOnVivino(wineName);
+        if (!vivinoUrl) {
+          return new Response(JSON.stringify({ warning: 'Label read: "' + wineName + '", but not found on Vivino', name: wineName }), { headers: { 'Content-Type': 'application/json' } });
+        }
+
+        // Get full details
+        const details = await getWineDetails(vivinoUrl);
+        details.searchQuery = wineName;
         return new Response(JSON.stringify(details), { headers: { 'Content-Type': 'application/json' } });
       } catch (e) {
         return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
