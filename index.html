@@ -290,7 +290,7 @@ async function searchWine() {
 // ── Lookup on Vivino via proxy ──
 async function lookupVivino(query) {
   // Search Vivino via Cloudflare Function
-  const searchUrl = '/apis/search-vivino?q=' + encodeURIComponent(query);
+  const searchUrl = '/api/search-vivino?q=' + encodeURIComponent(query);
   const resp = await fetch(searchUrl);
   if (!resp.ok) {
     // Fallback: use our backend to search
@@ -307,7 +307,7 @@ async function lookupVivino(query) {
   setStatus('<span class="spinner"></span>Getting wine details…');
 
   // Get wine details
-  const detailResp = await fetch('/apis/get-vivino-wine?url=' + encodeURIComponent(data.url));
+  const detailResp = await fetch('/api/get-vivino-wine?url=' + encodeURIComponent(data.url));
   if (!detailResp.ok) throw new Error('Failed to get wine details');
   const details = await detailResp.json();
 
