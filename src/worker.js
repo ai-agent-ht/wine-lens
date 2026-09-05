@@ -7,6 +7,7 @@ const HTML = `<!DOCTYPE html>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>🍷 Wine Lens</title>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:#f8f6f2;color:#2d2d2d;min-height:100dvh;display:flex;flex-direction:column;align-items:center}
@@ -69,7 +70,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
   <div class="header">
     <div><h1>🍷 Wine Lens</h1></div>
   </div>
-  <div class="api-notice" id="apiNotice">🔑 <strong>Gemini API key needed</strong> (free, 60 req/min). Get at <a href="https://aistudio.google.com/apikey" target="_blank" style="color:#722f37">aistudio.google.com/apikey</a></div>
+  <div class="api-notice" id="apiNotice">📸 <strong>Scan label</strong> — Tesseract.js OCR works in your browser. Search tab also available.</div>
   <div class="tabs">
     <button class="tab active" onclick="switchTab('scan')">📸 Scan Label</button>
     <button class="tab" onclick="switchTab('search')">🔍 Search</button>
@@ -128,7 +129,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
     </div>
   </div>
   <div class="no-results" id="noResults">No wine found. Try a different name.</div>
-  <div class="footer">🍷 Wine Lens · Gemini AI + Vivino</div>
+  <div class="footer">🍷 Wine Lens · Tesseract OCR + Vivino</div>
 </div>
 <script>
 let stream=null,capturedBlob=null,currentTab='scan';
@@ -178,21 +179,19 @@ function retakePhoto(){capturedBlob=null;document.getElementById('preview').styl
 function setStatus(m){document.getElementById('status').innerHTML=m;}
 function hideResult(){document.getElementById('resultCard').classList.remove('show');document.getElementById('noResults').style.display='none';}
 async function analyzeWine(){
-  const k=localStorage.getItem('wine_gemini_key');
-  if(!k){const p=prompt('Enter your Gemini API key (free at aistudio.google.com/apikey):');if(!p){setStatus('Key needed');document.getElementById('btnDone').disabled=false;return;}localStorage.setItem('wine_gemini_key',p);}
-  setStatus('<span class="spinner"></span>Reading label with AI…');
+  setStatus('<span class="spinner"></span>Running OCR on label…');
   hideResult();document.getElementById('btnDone').disabled=true;
   try{
-    const b64=capturedBlob.split(',')[1]||capturedBlob;
-    const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key='+localStorage.getItem('wine_gemini_key'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:'Extract wine info as JSON: {"wine_name":"...","winery":"...","vintage":0,"grape":"...","region":"...","type":"Red/White/Rose/Sparkling/Dessert"}. Return raw JSON only, no markdown.'},{inline_data:{mime_type:'image/jpeg',data:b64}}]}]})});
-    if(!r.ok)throw new Error('Gemini '+r.status);
-    const d=await r.json(),txt=d.candidates?.[0]?.content?.parts?.[0]?.text||'',m=txt.match(/\\{[\\s\\S]*\\}/);
-    if(!m)throw new Error('Could not parse AI response');
-    const ld=JSON.parse(m[0]);if(ld.error)throw new Error(ld.error);
-    const q=[ld.wine_name,ld.winery,ld.vintage].filter(Boolean).join(' ');
-    setStatus('<span class="spinner"></span>Looking up: '+q+'…');
-    await lookupVivino(q);
-  }catch(e){setStatus('❌ '+e.message);document.getElementById('btnDone').disabled=false;}
+    // Run Tesseract.js in browser - no API key needed
+    const result = await Tesseract.recognize(capturedBlob, 'eng', {
+      logger: m => { if(m.status==='recognizing text') setStatus('📖 Reading text... '+Math.round(m.progress*100)+'%'); }
+    });
+    const text = result.data.text;
+    if(!text || text.trim().length < 5) throw new Error('Could not read label text');
+    setStatus('📖 Extracted: "'+text.trim().substring(0,60)+'…"');
+    // Use extracted text to search Vivino
+    await lookupVivino(text.trim().substring(0,100));
+  }catch(e){setStatus('❌ '+e.message+' — try Search tab');document.getElementById('btnDone').disabled=false;}
 }
 async function searchWine(){
   const q=document.getElementById('searchInput').value.trim();if(!q)return;

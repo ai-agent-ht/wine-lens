@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>🍷 Wine Lens</title>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:#f8f6f2;color:#2d2d2d;min-height:100dvh;display:flex;flex-direction:column;align-items:center}
@@ -67,7 +68,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
     <div><h1>🍷 Wine Lens</h1></div>
   </div>
 
-  <div class="api-notice" id="apiNotice">🔑 <strong>Gemini API key needed</strong> (free, 60 req/min). Get at <a href="https://aistudio.google.com/apikey" target="_blank" style="color:#722f37">aistudio.google.com/apikey</a></div>
+  <div class="api-notice" id="apiNotice">📸 <strong>Scan label</strong> — Tesseract.js OCR works in your browser. No API keys needed.</div>
 
   <div class="tabs">
     <button class="tab active" onclick="switchTab('scan')">📸 Scan Label</button>
@@ -135,7 +136,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
   </div>
 
   <div class="no-results" id="noResults">No wine found. Try a different name.</div>
-  <div class="footer">🍷 Wine Lens · Gemini AI + Vivino</div>
+  <div class="footer">🍷 Wine Lens · Tesseract OCR + Vivino</div>
 </div>
 
 <script>
@@ -220,51 +221,20 @@ function hideResult() {
   document.getElementById('noResults').style.display = 'none';
 }
 
-// ── Analyze via Gemini vision ──
+// ── Analyze label via Tesseract.js (in-browser, no API key) ──
 async function analyzeWine() {
-  const geminiKey = localStorage.getItem('wine_gemini_key');
-  if (!geminiKey) {
-    const key = prompt('📝 Enter your free Gemini API key (get at aistudio.google.com/apikey — 60 req/min free):');
-    if (!key) { setStatus('⚠️ API key needed'); document.getElementById('btnDone').disabled = false; return; }
-    localStorage.setItem('wine_gemini_key', key);
-  }
-
-  setStatus('<span class="spinner"></span>Reading label with AI…');
+  setStatus('<span class="spinner"></span>Running OCR on label…');
   hideResult();
   document.getElementById('btnDone').disabled = true;
 
   try {
-    const base64 = capturedBlob.split(',')[1] || capturedBlob;
-    
-    const resp = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + localStorage.getItem('wine_gemini_key'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{
-          parts: [
-            { text: 'You are a wine expert. Look at this wine label photo and extract EXACTLY these fields in JSON format (no markdown code fences, just raw JSON): { "wine_name": "...", "winery": "...", "vintage": 2020 or null, "grape": "...", "region": "...", "type": "Red/White/Rosé/Sparkling/Dessert" }. If you cannot read the label clearly, return {"error": "Could not read label"}' },
-            { inline_data: { mime_type: 'image/jpeg', data: base64 } }
-          ]
-        }]
-      })
+    const result = await Tesseract.recognize(capturedBlob, 'eng', {
+      logger: m => { if(m.status === 'recognizing text') setStatus('📖 Reading text... ' + Math.round(m.progress * 100) + '%'); }
     });
-
-    if (!resp.ok) {
-      const err = await resp.json();
-      throw new Error('Gemini: ' + (err.error?.message || resp.status));
-    }
-    const result = await resp.json();
-    const text = result.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error('Could not parse AI response');
-
-    const labelData = JSON.parse(jsonMatch[0]);
-    if (labelData.error) throw new Error(labelData.error);
-
-    const query = [labelData.wine_name, labelData.winery, labelData.vintage].filter(Boolean).join(' ');
-    setStatus('<span class="spinner"></span>Found: "' + query + '" — looking up on Vivino…');
-
-    await lookupVivino(query);
+    const text = result.data.text;
+    if (!text || text.trim().length < 5) throw new Error('Could not read label text');
+    setStatus('📖 Extracted: "' + text.trim().substring(0, 60) + '…"');
+    await lookupVivino(text.trim().substring(0, 100));
   } catch(e) {
     setStatus('❌ ' + e.message + ' — try Search tab');
     document.getElementById('btnDone').disabled = false;
