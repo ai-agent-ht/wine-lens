@@ -248,30 +248,54 @@ async function searchWineOnVivino(query) {
     headers: { 'User-Agent': UA }
   });
   const html = await resp.text();
-  const match = html.match(/href="(https:\/\/www\.vivino\.com\/[a-z]+\/[^"]+\/w\/\d+[^"]*)"/);
-  return match ? match[1] : null;
+  // Try multiple patterns to find wine links
+  const patterns = [
+    /href="(https:\/\/www\.vivino\.com\/\w+\/[^"]+\/w\/\d+[^"]*)"/,
+    /href="(\/en\/[^"]+\/w\/\d+[^"]*)"/,
+    /\/w\/\d+/,
+    /<a[^>]*href="([^"]+)"[^>]*class="[^"]*link[^"]*"[^>]*>/
+  ];
+  for (const pat of patterns) {
+    const m = html.match(pat);
+    if (m) {
+      let url = m[1];
+      if (url.startsWith('/')) url = 'https://www.vivino.com' + url;
+      if (url.match(/\/w\/\d+/)) return url;
+    }
+  }
+  // Last resort: find any URL containing /w/
+  const wineMatch = html.match(/https?:\/\/[^"']*\/w\/\d+[^"' ]*/);
+  return wineMatch ? wineMatch[0] : null;
 }
 
 async function getWineDetails(wineUrl) {
   const resp = await fetch(wineUrl, { headers: { 'User-Agent': UA } });
   const html = await resp.text();
 
-  // Name
+  // Name - try common patterns
   let name = '';
-  const h1Match = html.match(/<h1[^>]*>([^<]+)<\/h1>/);
-  if (h1Match) name = h1Match[1].trim();
+  const h1Match = html.match(/<h1[^>]*data-v-[^>]*>([^<]+)<\/h1>/) || html.match(/<h1[^>]*class="[^"]*"[^>]*>([^<]+)<\/h1>/) || html.match(/<h1[^>]*>([^<]+)<\/h1>/);
+  if (h1Match && h1Match[1].trim().length > 1) name = h1Match[1].trim();
 
   // Winery
   let winery = '';
   const wMatch = html.match(/wineries\/([^"]+)"[^>]*>([^<]+)<\/a>/);
   if (wMatch) winery = wMatch[2].trim();
 
-  // Rating & reviews
+  // Rating & reviews - find JSON-LD structured data
   let rating = 0, reviews = 0;
-  const rMatch = html.match(/(\d\.\d+)\s*[^.]*?\(?([\d,]+)\s*ratings?\s*\)?/);
-  if (rMatch) {
-    rating = parseFloat(rMatch[1]);
-    reviews = parseInt(rMatch[2].replace(/,/g, ''));
+  // Try JSON-LD first (most reliable)
+  const jsonLdMatch = html.match(/{"@type":"Product"[^}]*"aggregateRating"[^}]*"ratingValue":"?([\d.]+)"?[^}]*"reviewCount":"?(\d+)"?[^}]*}/);
+  if (jsonLdMatch) {
+    rating = parseFloat(jsonLdMatch[1]);
+    reviews = parseInt(jsonLdMatch[2]);
+  } else {
+    // Fallback: look for "4.6 (29892 ratings)" pattern
+    const rMatch = html.match(/([\d.]+)\s*[\(\)]\s*([\d,]+)\s*rating/);
+    if (rMatch) {
+      rating = parseFloat(rMatch[1]);
+      reviews = parseInt(rMatch[2].replace(/,/g, ''));
+    }
   }
 
   // Price
