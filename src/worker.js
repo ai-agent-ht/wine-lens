@@ -272,75 +272,59 @@ async function getWineDetails(wineUrl) {
   const resp = await fetch(wineUrl, { headers: { 'User-Agent': UA } });
   const html = await resp.text();
 
-  // Name - try common patterns
-  let name = '';
-  const h1Match = html.match(/<h1[^>]*data-v-[^>]*>([^<]+)<\/h1>/) || html.match(/<h1[^>]*class="[^"]*"[^>]*>([^<]+)<\/h1>/) || html.match(/<h1[^>]*>([^<]+)<\/h1>/);
-  if (h1Match && h1Match[1].trim().length > 1) name = h1Match[1].trim();
-
-  // Winery
-  let winery = '';
-  const wMatch = html.match(/wineries\/([^"]+)"[^>]*>([^<]+)<\/a>/);
-  if (wMatch) winery = wMatch[2].trim();
-
-  // Rating & reviews - find JSON-LD structured data
-  let rating = 0, reviews = 0;
-  // Try JSON-LD first (most reliable)
-  const jsonLdMatch = html.match(/{"@type":"Product"[^}]*"aggregateRating"[^}]*"ratingValue":"?([\d.]+)"?[^}]*"reviewCount":"?(\d+)"?[^}]*}/);
-  if (jsonLdMatch) {
-    rating = parseFloat(jsonLdMatch[1]);
-    reviews = parseInt(jsonLdMatch[2]);
-  } else {
-    // Fallback: look for "4.6 (29892 ratings)" pattern
-    const rMatch = html.match(/([\d.]+)\s*[\(\)]\s*([\d,]+)\s*rating/);
-    if (rMatch) {
-      rating = parseFloat(rMatch[1]);
-      reviews = parseInt(rMatch[2].replace(/,/g, ''));
-    }
+  // Extract JSON-LD for most data (most reliable)
+  const ldMatch = html.match(/<script[^>]*type="application\/ld\+json"[^>]*>(.*?)<\/script>/s);
+  let ld = {};
+  if (ldMatch) {
+    try { ld = JSON.parse(ldMatch[1].trim()); } catch(e) { ld = {}; }
   }
 
-  // Price
-  let price = '';
-  const pMatch = html.match(/\$(\d+[\d.,]*)/);
-  if (pMatch) price = pMatch[1];
+  const name = ld.name || '';
+  const winery = '';
+  const rating = ld.aggregateRating ? parseFloat(ld.aggregateRating.ratingValue || 0) : 0;
+  const reviews = ld.aggregateRating ? parseInt(ld.aggregateRating.ratingCount || 0) : 0;
 
-  // Type
-  let type = '';
-  const tMatch = html.match(/Wine style[^<]*<[^>]*>([^<]+)<\/a>/i);
-  if (tMatch) type = tMatch[1].trim();
+  // Price from offers
+  let price = '';
+  if (ld.offers && ld.offers.length > 0) {
+    const offer = ld.offers[0];
+    price = offer.lowPrice || offer.price || '';
+  }
+
+  // Extract wine type, grapes, region from the info table
+  let type = '', grapes = '', region = '', alcohol = '', vintage = '';
+
+  // Try to find "Wine style" text
+  const wineStyleMatch = html.match(/Wine style[^<]*<[^>]*>[^<]*<[^>]*>([^<]+)</i);
+  if (wineStyleMatch) type = wineStyleMatch[1].trim();
 
   // Grapes
-  let grapes = '';
-  const gMatch = html.match(/Grapes[^<]*<\/td>[^<]*<td[^>]*>([^<]+)</i);
-  if (gMatch) grapes = gMatch[1].trim();
+  const grapesMatch = html.match(/Grapes[^<]*<[^>]*>[^<]*<[^>]*>([^<]+)</i) || html.match(/<td[^>]*>[^<]*Grapes[^<]*<\/td>\s*<td[^>]*>([^<]+)</i);
+  if (grapesMatch) grapes = grapesMatch[1].trim();
 
   // Region
-  let region = '';
-  const regMatch = html.match(/Region[^<]*<\/td>[^<]*<td[^>]*>([^<]+)</i);
-  if (regMatch) region = regMatch[1].trim();
+  const regionMatch = html.match(/Region[^<]*<[^>]*>[^<]*<[^>]*>([^<]+)</i) || html.match(/Australia\s*\/\s*([^<]+)/);
+  if (regionMatch) region = regionMatch[1].trim();
 
   // Alcohol
-  let alcohol = '';
-  const aMatch = html.match(/Alcohol content[^<]*<\/td>[^<]*<td[^>]*>([^<]+)/i);
-  if (aMatch) alcohol = aMatch[1].trim();
+  const alcMatch = html.match(/Alcohol content[^<]*<[^>]*>[^<]*<[^>]*>([^<]+)/i);
+  if (alcMatch) alcohol = alcMatch[1].trim();
+
+  // Vintage from JSON-LD or page
+  const vintageMatch = html.match(/(?:Vintage|year)[^<]*<[^>]*>[^<]*<[^>]*>(\d{4})/i) || html.match(/\?year=(\d{4})/);
+  if (vintageMatch) vintage = vintageMatch[1];
 
   // Critic scores
   let ws = '', rp = '', js = '';
-  const wsM = html.match(/Wine Spectator[^<]*<\/td>[^<]*<td[^>]*>\s*(\d+)/i);
+  const wsM = html.match(/Wine Spectator[^<]*<[^>]*>[^<]*<[^>]*>\s*(\d+)/i);
   if (wsM) ws = wsM[1];
-  const rpM = html.match(/Robert Parker[^<]*<\/td>[^<]*<td[^>]*>\s*(\d+)/i);
+  const rpM = html.match(/Robert Parker[^<]*<[^>]*>[^<]*<[^>]*>\s*(\d+)/i);
   if (rpM) rp = rpM[1];
-  const jsM = html.match(/James Suckling[^<]*<\/td>[^<]*<td[^>]*>\s*(\d+)/i);
+  const jsM = html.match(/James Suckling[^<]*<[^>]*>[^<]*<[^>]*>\s*(\d+)/i);
   if (jsM) js = jsM[1];
 
-  // Vintage
-  let vintage = '';
-  const vMatch = html.match(/Vintage(\d{4})/);
-  if (vMatch) vintage = vMatch[1];
-
   // Description from JSON-LD
-  let description = '';
-  const dMatch = html.match(/"description":"([^"]+)"/);
-  if (dMatch) description = dMatch[1].replace(/\\n/g, ' ');
+  const description = ld.description || '';
 
   return { name, winery, rating, reviews, price, grapes, region, alcohol, type, vintage, description, ws, rp, js };
 }
