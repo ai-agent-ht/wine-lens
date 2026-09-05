@@ -1,3 +1,4 @@
 name = "wine-lens"
 main = "src/worker.js"
 compatibility_date = "2025-09-01"
+account_id = "dfde88fc8930798d8cf21db228e56d73"
