@@ -223,23 +223,19 @@ function hideResult() {
 // ── Analyze label via Qwen VL (Worker backend) ──
 async function analyzeWine() {
   setStatus('<span class="spinner"></span>Sending label to Qwen VL…');
-  hideResult();
-  document.getElementById('btnDone').disabled = true;
-
-  try {
-    const r = await fetch('/api/analyze-label', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ image: capturedBlob })
+  hideResult();document.getElementById('btnDone').disabled=true;
+  try{
+    const r=await fetch('/api/analyze-label',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({image:capturedBlob})
     });
-    const d = await r.json();
-    if (!r.ok) throw new Error(d.error || 'API error ' + r.status);
-    if (d.warning) { setStatus('⚠️ ' + d.warning); document.getElementById('btnDone').disabled = false; return; }
-    renderWineCard(d, d.searchQuery || '');
-  } catch(e) {
-    setStatus('❌ ' + e.message + ' — try Search tab');
-    document.getElementById('btnDone').disabled = false;
-  }
+    const d=await r.json();
+    if(!r.ok) throw new Error(d.error||'API error '+r.status);
+    if(d.warning){ setStatus('⚠️ '+d.warning); return; }
+    renderWineCard(d, d.searchQuery||'');
+  }catch(e){setStatus('❌ '+e.message+' — try Search tab');}
+  finally{document.getElementById('btnDone').disabled=false;}
 }
 
 // ── Search by text ──

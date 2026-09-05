@@ -188,9 +188,10 @@ async function analyzeWine(){
     });
     const d=await r.json();
     if(!r.ok) throw new Error(d.error||'API error '+r.status);
-    if(d.warning){ setStatus('⚠️ '+d.warning); document.getElementById('btnDone').disabled=false; return; }
+    if(d.warning){ setStatus('⚠️ '+d.warning); return; }
     renderWineCard(d, d.searchQuery||'');
-  }catch(e){setStatus('❌ '+e.message+' — try Search tab');document.getElementById('btnDone').disabled=false;}
+  }catch(e){setStatus('❌ '+e.message+' — try Search tab');}
+  finally{document.getElementById('btnDone').disabled=false;}
 }
 async function searchWine(){
   const q=document.getElementById('searchInput').value.trim();if(!q)return;
