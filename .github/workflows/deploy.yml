@@ -16,3 +16,5 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           secrets: |
             OPENROUTER_KEY
+        env:
+          OPENROUTER_KEY: ${{ secrets.OPENROUTER_KEY }}
