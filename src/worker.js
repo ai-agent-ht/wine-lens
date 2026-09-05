@@ -280,7 +280,14 @@ async function getWineDetails(wineUrl) {
   }
 
   const name = ld.name || '';
-  const winery = '';
+  // Winery - try from JSON-LD brand/manufacturer
+  let winery = '';
+  if (ld.brand) winery = typeof ld.brand === 'string' ? ld.brand : ld.brand.name || '';
+  if (!winery && ld.manufacturer) winery = typeof ld.manufacturer === 'string' ? ld.manufacturer : ld.manufacturer.name || '';
+  if (!winery) {
+    const wm = html.match(/wineries\/([^"\/]+)/);
+    if (wm) winery = wm[1].replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  }
   const rating = ld.aggregateRating ? parseFloat(ld.aggregateRating.ratingValue || 0) : 0;
   const reviews = ld.aggregateRating ? parseInt(ld.aggregateRating.ratingCount || 0) : 0;
 
